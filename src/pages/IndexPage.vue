@@ -28,6 +28,7 @@
 import { Todo, Meta } from 'components/models'
 import ExampleComponent from 'components/ExampleComponent.vue'
 import { ref } from 'vue'
+
 const percentual = ref('')
 const valueInput = ref('')
 const result = ref('')
