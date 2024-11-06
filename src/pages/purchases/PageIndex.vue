@@ -4,8 +4,18 @@ import { api } from 'boot/axios'
 import { currencyFormat, dateTimeFormat } from 'src/services/util'
 import PurchaseDetail from 'components/PurchaseDetail.vue'
 
-const loading = ref(false)
+const tableRef = ref()
 const rows = ref([])
+const filter = ref({ date: '', store: '' })
+const loading = ref(false)
+const pagination = ref({
+  sortBy: 'desc',
+  descending: false,
+  page: 1,
+  rowsPerPage: 3,
+  rowsNumber: 10
+})
+
 const columns = ref([
   {
     name: 'purchased_at',
@@ -33,7 +43,14 @@ const columns = ref([
     align: 'center',
     label: 'Imposto',
     field: 'tax',
-    sortable: false
+    format: (val: never) => currencyFormat(val)
+  },
+  {
+    name: 'tax_percent',
+    align: 'center',
+    label: 'Imposto %',
+    field: 'tax_percentage',
+    format: (val: never) => val + '%'
   },
   {
     name: 'items_count',
@@ -43,17 +60,43 @@ const columns = ref([
     sortable: false
   }
 ])
+
+const onRequest = (props) => {
+  const { page } = props.pagination // rowsPerPage, sortBy, descending
+  const filter = props.filter
+
+  loading.value = true
+  console.log(filter.date)
+  console.log(filter.store)
+  api.get(`/purchase?page=${page}&filter=${filter.date}&filter2=${filter.store}`).then((response) => {
+    rows.value = response.data.data
+
+    pagination.value.page = response.data.current_page
+    pagination.value.rowsPerPage = response.data.per_page
+    pagination.value.rowsNumber = response.data.total
+    loading.value = false
+  })
+}
 onMounted(() => {
+  tableRef.value.requestServerInteraction()
+})
+
+/* onMounted(() => {
   api.get('/purchase').then((response) => {
     rows.value = response.data.purchases
   })
-})
+}) */
 </script>
 
 <template>
   <div class="q-pa-sm text-h4">Lista de compras</div>
   <div class="q-pa-md">
     <q-table
+      v-model:pagination="pagination"
+      :filter="filter"
+      binary-state-sort
+      @request="onRequest"
+      ref="tableRef"
       dense
       table-header-class="bg-primary text-white text-h5"
       :rows="rows"
@@ -65,6 +108,18 @@ onMounted(() => {
     >
       <template v-slot:loading>
         <q-inner-loading showing color="orange-10"/>
+      </template>
+      <template v-slot:top-right>
+        <q-input borderless dense debounce="300" type="date" v-model="filter.date" placeholder="Search">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
+        <q-input borderless dense debounce="300" v-model="filter.store" placeholder="local">
+          <template v-slot:append>
+            <q-icon name="search" />
+          </template>
+        </q-input>
       </template>
       <template v-slot:header="props">
         <q-tr :props="props">

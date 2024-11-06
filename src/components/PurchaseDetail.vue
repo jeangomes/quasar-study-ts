@@ -67,6 +67,7 @@ onMounted(() => {
     :rows="rows"
     :columns="columns"
     row-key="name"
+    :rows-per-page-options="[rows.length]"
   />
 </template>
 
